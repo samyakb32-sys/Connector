@@ -65,9 +65,18 @@ serverless-only hosting).
    environment variable `CONNECTOR_TOKEN` to a random secret — this
    protects the `/mcp` endpoint, since it will be publicly reachable.
 2. In Claude, go to **Settings → Connectors → Add custom connector**, and
-   enter:
-   - URL: `https://<your-deployed-host>/mcp`
-   - Header: `Authorization: Bearer <your CONNECTOR_TOKEN>`
+   enter `https://<your-deployed-host>/mcp` with an
+   `Authorization: Bearer <your CONNECTOR_TOKEN>` header.
+
+   If your MCP client can't send custom headers, the token can go in the URL
+   instead — `https://<your-deployed-host>/mcp/<your CONNECTOR_TOKEN>` — so
+   the connector is a single secret URL to paste. Treat that URL like a
+   password.
+
+Note that most container hosts have an ephemeral filesystem, so the saved
+`.sessions/*.json` logins are lost on redeploy/restart; re-run `login` (or
+`set_cookies`) after a deploy, or mount a persistent volume at
+`/app/.sessions`.
 
 Local testing before deploying:
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import express from "express";
+import express, { type Request, type Response } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerTools } from "./tools.js";
@@ -9,21 +9,16 @@ const PORT = Number(process.env.PORT) || 3000;
 const TOKEN = process.env.CONNECTOR_TOKEN;
 
 const app = express();
-app.use(express.json());
+// Tool payloads (e.g. a large `html` blob for edit_element) can exceed the
+// 100kb express default, so raise the JSON body limit.
+app.use(express.json({ limit: "10mb" }));
 
 app.get("/", (_req, res) => {
   res.json({ name: "universal-website-connector", status: "ok" });
 });
 
-app.post("/mcp", async (req, res) => {
-  if (TOKEN) {
-    const auth = req.get("authorization");
-    if (auth !== `Bearer ${TOKEN}`) {
-      res.status(401).json({ error: "unauthorized" });
-      return;
-    }
-  }
-
+/** Handle one stateless MCP request: fresh server + transport per call. */
+async function handleMcp(req: Request, res: Response) {
   // Stateless mode: a fresh MCP server + transport per request, so a Claude
   // connector can just POST here without a session handshake. The Playwright
   // browser sessions themselves are still tracked by session_id in sessionManager,
@@ -37,11 +32,37 @@ app.post("/mcp", async (req, res) => {
     server.close();
   });
 
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (e) {
+    console.error("MCP request failed:", e);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "internal_error" });
+    }
+  }
+}
+
+// Token in the Authorization header (preferred).
+app.post("/mcp", async (req, res) => {
+  if (TOKEN && req.get("authorization") !== `Bearer ${TOKEN}`) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  await handleMcp(req, res);
 });
 
-app.get("/mcp", (_req, res) => {
+// Token embedded in the URL, for MCP clients that can't send custom headers —
+// the whole endpoint is then a single secret URL to paste.
+app.post("/mcp/:token", async (req, res) => {
+  if (TOKEN && req.params.token !== TOKEN) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  await handleMcp(req, res);
+});
+
+app.get(["/mcp", "/mcp/:token"], (_req, res) => {
   res.status(405).json({ error: "method_not_allowed", message: "This server runs in stateless mode; POST to /mcp." });
 });
 
