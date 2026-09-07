@@ -30,6 +30,10 @@ npx playwright install chromium   # downloads the browser binary
 npm run build
 ```
 
+If your environment blocks the Playwright CDN (some sandboxed/CI setups do),
+point the server at a pre-installed Chromium binary instead of downloading
+one — see [Environment variables](#environment-variables) below.
+
 ## Running as an MCP server
 
 Add it to your MCP client config (Claude Desktop / Claude Code, etc.):
@@ -45,6 +49,17 @@ Add it to your MCP client config (Claude Desktop / Claude Code, etc.):
 }
 ```
 
+## Environment variables
+
+All optional — the server works with plain `npx playwright install` and no
+special network setup by default.
+
+| Variable | Purpose |
+| --- | --- |
+| `CHROMIUM_PATH` | Absolute path to a Chromium executable to use instead of the one Playwright would download (useful when the download is blocked). |
+| `HTTPS_PROXY` / `https_proxy` | Proxy URL the launched browser should use for all navigation (e.g. `http://127.0.0.1:PORT`). |
+| `ALLOW_INSECURE_TLS` | Set to `1` to ignore HTTPS certificate errors (`ignoreHTTPSErrors`). Off by default — only enable this for trusted, controlled environments (e.g. a local dev proxy with a self-signed cert), never for general browsing. |
+
 ## Session model
 
 Every tool takes a `session_id` (defaults to `"default"`). Calls sharing a
@@ -52,6 +67,41 @@ Every tool takes a `session_id` (defaults to `"default"`). Calls sharing a
 → `fetch_content` → `edit_element` as one continuous flow. Cookies/local
 storage are saved to `.sessions/<session_id>.json` after `login` or
 `save_session`, so a session can be resumed after the process restarts.
+`close_session` frees a session's browser resources when you're done with it.
+
+## All tools
+
+| Tool | Purpose |
+| --- | --- |
+| `navigate` | Open a URL in a session. |
+| `get_page_info` | Current URL + title. |
+| `fetch_content` | Text/innerHTML/outerHTML of elements matching a selector. |
+| `fetch_links` | All `text`/`href` pairs matching a selector. |
+| `fetch_table` | Structured rows/cells from an HTML `<table>`. |
+| `screenshot` | PNG screenshot of the page or one element. |
+| `login` | Fill + submit a username/password form, persist cookies. |
+| `set_cookies` | Inject cookies directly (e.g. tokens obtained elsewhere). |
+| `save_session` | Persist current cookies/localStorage to disk. |
+| `close_session` | Close a session and free its browser resources. |
+| `click` | Click an element. |
+| `fill_field` | Type into an input/textarea. |
+| `submit_form` | Submit a form or press Enter. |
+| `wait_for_selector` | Wait for an element to appear. |
+| `scroll` | Scroll the page or an element into view. |
+| `edit_element` | Live-edit an element's text/HTML in the DOM. |
+| `set_attribute` | Set or remove an HTML attribute. |
+| `remove_element` | Remove element(s) from the page. |
+| `execute_js` | Run arbitrary JavaScript in the page and return the result. |
+
+## Testing
+
+A smoke test that drives the server through the MCP client protocol against
+a real page is included:
+
+```bash
+npm run build
+node test/smoke.mjs
+```
 
 ## Notes on "editing"
 
@@ -70,3 +120,5 @@ POST, "Save" button, etc.), the same way a human user would.
   restrict filesystem access to it.
 - `execute_js` runs with full page privileges — treat it like a browser
   console, not a sandbox.
+- `ALLOW_INSECURE_TLS` disables certificate verification for the browser;
+  only use it in trusted, controlled network setups.
