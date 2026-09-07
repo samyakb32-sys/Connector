@@ -76,3 +76,10 @@ class SessionManager {
 }
 
 export const sessionManager = new SessionManager();
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, async () => {
+    await sessionManager.closeAll();
+    process.exit(0);
+  });
+}

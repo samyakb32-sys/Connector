@@ -13,9 +13,8 @@ sites that have no API at all.
   screenshots (`fetch_content`, `fetch_links`, `fetch_table`, `screenshot`).
 - **Log in** to sites with a username/password form, and persist the session
   (cookies + storage) to disk under a `session_id` so it survives restarts
-  (`login`, `set_cookies`, `save_session`).
-- **Interact**: click, fill fields, submit forms, wait for elements, scroll
-  (`click`, `fill_field`, `submit_form`, `wait_for_selector`, `scroll`).
+  (`login`, `set_cookies`).
+- **Interact**: click elements and fill fields (`click`, `fill_field`).
 - **Live-edit the DOM**: change text/HTML of elements, set/remove attributes,
   remove elements (`edit_element`, `set_attribute`, `remove_element`).
 - **Escape hatch**: run arbitrary JavaScript in the page (`execute_js`) —
@@ -110,7 +109,7 @@ Every tool takes a `session_id` (defaults to `"default"`). Calls sharing a
 `session_id` reuse the same browser tab/cookies, so you can `navigate` → `login`
 → `fetch_content` → `edit_element` as one continuous flow. Cookies/local
 storage are saved to `.sessions/<session_id>.json` after `login` or
-`save_session`, so a session can be resumed after the process restarts.
+`set_cookies`, so a session can be resumed after the process restarts.
 `close_session` frees a session's browser resources when you're done with it.
 
 ## All tools
@@ -125,17 +124,16 @@ storage are saved to `.sessions/<session_id>.json` after `login` or
 | `screenshot` | PNG screenshot of the page or one element. |
 | `login` | Fill + submit a username/password form, persist cookies. |
 | `set_cookies` | Inject cookies directly (e.g. tokens obtained elsewhere). |
-| `save_session` | Persist current cookies/localStorage to disk. |
 | `close_session` | Close a session and free its browser resources. |
 | `click` | Click an element. |
 | `fill_field` | Type into an input/textarea. |
-| `submit_form` | Submit a form or press Enter. |
-| `wait_for_selector` | Wait for an element to appear. |
-| `scroll` | Scroll the page or an element into view. |
 | `edit_element` | Live-edit an element's text/HTML in the DOM. |
 | `set_attribute` | Set or remove an HTML attribute. |
 | `remove_element` | Remove element(s) from the page. |
 | `execute_js` | Run arbitrary JavaScript in the page and return the result. |
+
+Playwright auto-waits for elements and scrolls them into view, so there are
+no separate wait/scroll tools; `execute_js` covers anything else.
 
 ## Testing
 
@@ -152,8 +150,8 @@ node test/smoke.mjs
 `edit_element` / `set_attribute` / `execute_js` change the **live DOM in the
 browser tab**, the same way browser DevTools would. This does not, by
 itself, persist changes back to the website's server — for that, use
-`execute_js` or `submit_form` to drive the site's own save/submit UI (form
-POST, "Save" button, etc.), the same way a human user would.
+`click` or `execute_js` to drive the site's own save/submit UI (a "Save"
+button, a form POST, etc.), the same way a human user would.
 
 ## Security
 

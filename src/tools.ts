@@ -191,16 +191,6 @@ export function registerTools(server: McpServer) {
   );
 
   server.tool(
-    "save_session",
-    "Persist the current session's cookies/localStorage to disk so it survives a restart.",
-    { session_id: sessionIdSchema },
-    async ({ session_id }) => {
-      await sessionManager.saveState(session_id);
-      return ok(`Session "${session_id}" saved.`);
-    }
-  );
-
-  server.tool(
     "close_session",
     "Close a browser session and free resources.",
     { session_id: sessionIdSchema },
@@ -231,53 +221,6 @@ export function registerTools(server: McpServer) {
       const { page } = await sessionManager.getOrCreate(session_id);
       await page.fill(selector, value, { timeout: 10000 });
       return ok(`Filled "${selector}" with the given value.`);
-    }
-  );
-
-  server.tool(
-    "submit_form",
-    "Submit a <form> matching a CSS selector (or press Enter in a focused field).",
-    { session_id: sessionIdSchema, selector: z.string().optional() },
-    async ({ session_id, selector }) => {
-      const { page } = await sessionManager.getOrCreate(session_id);
-      if (selector) {
-        await page.$eval(selector, (form) => (form as HTMLFormElement).submit());
-      } else {
-        await page.keyboard.press("Enter");
-      }
-      await page.waitForLoadState("load").catch(() => {});
-      return ok(`Form submitted. Current URL: ${page.url()}`);
-    }
-  );
-
-  server.tool(
-    "wait_for_selector",
-    "Wait until an element appears (useful before reading/editing dynamically loaded content).",
-    { session_id: sessionIdSchema, selector: z.string(), timeout_ms: z.number().optional().default(10000) },
-    async ({ session_id, selector, timeout_ms }) => {
-      const { page } = await sessionManager.getOrCreate(session_id);
-      await page.waitForSelector(selector, { timeout: timeout_ms });
-      return ok(`Selector "${selector}" appeared.`);
-    }
-  );
-
-  server.tool(
-    "scroll",
-    "Scroll the page or a specific element into view / by an offset.",
-    {
-      session_id: sessionIdSchema,
-      selector: z.string().optional().describe("If set, scrolls this element into view."),
-      x: z.number().optional().default(0),
-      y: z.number().optional().default(800),
-    },
-    async ({ session_id, selector, x, y }) => {
-      const { page } = await sessionManager.getOrCreate(session_id);
-      if (selector) {
-        await page.locator(selector).scrollIntoViewIfNeeded();
-      } else {
-        await page.mouse.wheel(x, y);
-      }
-      return ok(`Scrolled.`);
     }
   );
 

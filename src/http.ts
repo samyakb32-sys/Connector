@@ -3,7 +3,6 @@ import express, { type Request, type Response } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerTools } from "./tools.js";
-import { sessionManager } from "./sessions.js";
 
 const PORT = Number(process.env.PORT) || 3000;
 const TOKEN = process.env.CONNECTOR_TOKEN;
@@ -62,22 +61,9 @@ app.post("/mcp/:token", async (req, res) => {
   await handleMcp(req, res);
 });
 
-app.get(["/mcp", "/mcp/:token"], (_req, res) => {
-  res.status(405).json({ error: "method_not_allowed", message: "This server runs in stateless mode; POST to /mcp." });
-});
-
 app.listen(PORT, () => {
   console.log(`universal-website-connector listening on :${PORT}`);
   if (!TOKEN) {
     console.warn("CONNECTOR_TOKEN not set — the /mcp endpoint is unauthenticated. Set CONNECTOR_TOKEN before exposing this publicly.");
   }
-});
-
-process.on("SIGINT", async () => {
-  await sessionManager.closeAll();
-  process.exit(0);
-});
-process.on("SIGTERM", async () => {
-  await sessionManager.closeAll();
-  process.exit(0);
 });
