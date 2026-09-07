@@ -17,7 +17,13 @@ class SessionManager {
 
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await chromium.launch({ headless: true });
+      const executablePath = process.env.CHROMIUM_PATH || undefined;
+      const proxyServer = process.env.HTTPS_PROXY || process.env.https_proxy;
+      this.browser = await chromium.launch({
+        headless: true,
+        executablePath,
+        proxy: proxyServer ? { server: proxyServer } : undefined,
+      });
     }
     return this.browser;
   }
@@ -37,6 +43,7 @@ class SessionManager {
       viewport: { width: 1366, height: 900 },
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+      ignoreHTTPSErrors: process.env.ALLOW_INSECURE_TLS === "1",
     });
     const page = await context.newPage();
     const session: Session = { id, context, page };
