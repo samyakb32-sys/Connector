@@ -191,6 +191,16 @@ export function registerTools(server: McpServer) {
   );
 
   server.tool(
+    "save_session",
+    "Persist the current session's cookies/localStorage to disk so it survives a restart. Call this after a login done by hand (multi-step, 2FA, OAuth) — `login` and `set_cookies` already save on their own.",
+    { session_id: sessionIdSchema },
+    async ({ session_id }) => {
+      await sessionManager.saveState(session_id);
+      return ok(`Session "${session_id}" saved.`);
+    }
+  );
+
+  server.tool(
     "close_session",
     "Close a browser session and free resources.",
     { session_id: sessionIdSchema },
