@@ -36,6 +36,10 @@ one — see [Environment variables](#environment-variables) below.
 
 ## Running as an MCP server
 
+There are two ways to run this, depending on how you want to connect it.
+
+### Option A — Local (stdio), added to a config file
+
 Add it to your MCP client config (Claude Desktop / Claude Code, etc.):
 
 ```json
@@ -49,6 +53,35 @@ Add it to your MCP client config (Claude Desktop / Claude Code, etc.):
 }
 ```
 
+### Option B — Remote (HTTP), added as a Claude "custom connector" by URL
+
+This is the "paste a URL and go" experience, like Claude's built-in
+connectors. It requires deploying the server somewhere with a public URL
+(Playwright needs a real, always-on process — this can't run on static/
+serverless-only hosting).
+
+1. Deploy the included `Dockerfile` to any container host that runs
+   long-lived processes (Railway, Render, Fly.io, a VPS, etc.). Set an
+   environment variable `CONNECTOR_TOKEN` to a random secret — this
+   protects the `/mcp` endpoint, since it will be publicly reachable.
+2. In Claude, go to **Settings → Connectors → Add custom connector**, and
+   enter:
+   - URL: `https://<your-deployed-host>/mcp`
+   - Header: `Authorization: Bearer <your CONNECTOR_TOKEN>`
+
+Local testing before deploying:
+
+```bash
+npm run build
+CONNECTOR_TOKEN=devsecret npm run start:http
+# server listens on :3000 (override with PORT=...)
+```
+
+The HTTP server runs in stateless MCP mode (a fresh MCP session per
+request); the underlying Playwright browser sessions are still tracked
+per `session_id` independently of that, so `navigate` → `login` →
+`fetch_content` flows work the same as over stdio.
+
 ## Environment variables
 
 All optional — the server works with plain `npx playwright install` and no
@@ -59,6 +92,8 @@ special network setup by default.
 | `CHROMIUM_PATH` | Absolute path to a Chromium executable to use instead of the one Playwright would download (useful when the download is blocked). |
 | `HTTPS_PROXY` / `https_proxy` | Proxy URL the launched browser should use for all navigation (e.g. `http://127.0.0.1:PORT`). |
 | `ALLOW_INSECURE_TLS` | Set to `1` to ignore HTTPS certificate errors (`ignoreHTTPSErrors`). Off by default — only enable this for trusted, controlled environments (e.g. a local dev proxy with a self-signed cert), never for general browsing. |
+| `PORT` | (HTTP mode only) Port for the HTTP server. Defaults to `3000`. |
+| `CONNECTOR_TOKEN` | (HTTP mode only) Bearer token required on the `Authorization` header of every `/mcp` request. Strongly recommended once the server is publicly reachable — without it, anyone with the URL can drive the browser (including any `login`/credential calls). |
 
 ## Session model
 
