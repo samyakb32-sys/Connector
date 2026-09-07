@@ -30,6 +30,21 @@ npx playwright install chromium   # downloads the browser binary
 npm run build
 ```
 
+## Web dashboard (the "face")
+
+A local UI to drive the same browser sessions by hand — enter a URL, see a
+live screenshot, fetch/edit content, click/fill fields, run JS, or log in —
+without going through an AI client at all.
+
+```bash
+npm run build
+npm run web            # http://localhost:5177
+```
+
+Set `PORT` to change the port. The dashboard and the MCP server share the
+same session store (`.sessions/`), so a session you log into from one can be
+reused from the other by session id.
+
 ## Running as an MCP server
 
 Add it to your MCP client config (Claude Desktop / Claude Code, etc.):
