@@ -22,7 +22,11 @@ class SessionManager {
       this.browser = await chromium.launch({
         headless: true,
         executablePath,
-        proxy: proxyServer ? { server: proxyServer } : undefined,
+        // NO_PROXY is respected by most HTTP clients but not by Playwright unless
+        // it is passed through explicitly as the proxy bypass list.
+        proxy: proxyServer
+          ? { server: proxyServer, bypass: process.env.NO_PROXY || process.env.no_proxy }
+          : undefined,
       });
     }
     return this.browser;
