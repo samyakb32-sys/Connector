@@ -27,7 +27,7 @@ If you're an agent with terminal access, you can set this up and use it
 yourself — no deployment needed:
 
 ```bash
-git clone <this-repo-url>
+git clone -b main <this-repo-url>
 cd Connector
 npm install
 npx playwright install chromium
