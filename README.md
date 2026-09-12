@@ -21,6 +21,27 @@ sites that have no API at all.
   call the site's own JS/APIs, mutate anything, fetch data the same way the
   site's own frontend does.
 
+## For AI coding agents (Claude Code, Cursor, etc.)
+
+If you're an agent with terminal access, you can set this up and use it
+yourself — no deployment needed:
+
+```bash
+git clone <this-repo-url>
+cd Connector
+npm install
+npx playwright install chromium
+npm run build
+```
+
+Then run `node dist/index.js` as an MCP server over stdio (add it to your own
+MCP client config, or spawn it directly and speak the MCP protocol over its
+stdin/stdout). All 16 tools are available immediately — see
+[All tools](#all-tools) below. Each tool call takes a `session_id`; reuse the
+same one across calls in a task to keep the browser tab, cookies, and login
+state alive between `navigate` → `login` → `fetch_content` → `edit_element`
+steps.
+
 ## Setup
 
 ```bash
